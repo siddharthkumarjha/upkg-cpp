@@ -1,0 +1,13 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+ContinuationIndentWidth: 4
+AllowShortFunctionsOnASingleLine: All
+AllowShortLambdasOnASingleLine: None
+IndentPPDirectives: AfterHash
+AlignTrailingComments: true
+BreakBeforeBraces: Allman
+AccessModifierOffset: -4
+NamespaceIndentation: All
+AlignConsecutiveAssignments: AcrossEmptyLines
+ColumnLimit: 120
