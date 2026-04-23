@@ -104,13 +104,12 @@ namespace upkg
         }
 
         std::string_view const sv_env = env;
-        auto sv_split                 = std::views::split(sv_env, ':') |
-                                        std::views::transform( // clang-format off
-                                            [](auto &&sub_range) -> std::string_view
-                                            {
-                                                return {sub_range.begin(),
-                                                        static_cast<size_t>(std::ranges::distance(sub_range))};
-                                            }); // clang-format on
+        auto sv_split =
+            std::views::split(sv_env, ':') | std::views::transform(
+                                                 [](auto &&sub_range) -> std::string_view
+                                                 {
+                                                     return {sub_range.begin(), std::ranges::size(sub_range)};
+                                                 });
 
         for (const auto env_path : sv_split)
         {
@@ -169,14 +168,13 @@ namespace upkg
     auto glibc_version() -> std::optional<std::array<size_t, 2>>
     {
         const std::string_view version_str = gnu_get_libc_version();
-        auto sv_split                      = std::views::split(version_str, '.') |
-                                             std::views::transform( // clang-format off
-                                                 [](auto &&sub_range) -> std::string_view
-                                                 {
-                                                    return {sub_range.begin(),
-                                                            static_cast<size_t>(std::ranges::distance(sub_range))};
-                                                 }); // clang-format on
-        const auto n                       = std::ranges::distance(sv_split);
+        auto sv_split =
+            std::views::split(version_str, '.') | std::views::transform(
+                                                      [](auto &&sub_range) -> std::string_view
+                                                      {
+                                                          return {sub_range.begin(), std::ranges::size(sub_range)};
+                                                      });
+        const auto n = std::ranges::distance(sv_split);
         if (n != 2)
             return std::nullopt;
 
