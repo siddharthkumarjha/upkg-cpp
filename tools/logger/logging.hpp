@@ -4,17 +4,12 @@
 #include "log_level.hpp"
 #include "stream-concept.hpp"
 #include <iostream>
-#include <mutex>
 
 namespace upkg::log
 {
-    void set_sink(std::ostream &oss);
-    void flush_sink();
-
     namespace detail
     {
-        extern constinit std::mutex sink_mtx;
-        extern constinit std::ostream *sink;
+        extern constinit std::ostream &sink;
 
         template <LogLevel Level, is_streamable... Args>
             requires(Level < LogLevel::OFF)
@@ -22,12 +17,9 @@ namespace upkg::log
         {
             log_impl(Args &&...args, fmt_source_loc const location = std::source_location::current())
             {
-                std::lock_guard lk{sink_mtx};
-                auto &oss = *sink;
-
-                oss << "[" << log_level_str(Level) << "] " << location << ' ';
-                (oss << ... << std::forward<Args>(args));
-                oss << '\n';
+                sink << "[" << log_level_str(Level) << "] " << location << ' ';
+                (sink << ... << std::forward<Args>(args));
+                sink << '\n';
             }
         };
         template <LogLevel Level = LogLevel::OFF, is_streamable... Args>

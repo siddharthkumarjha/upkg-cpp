@@ -23,12 +23,12 @@ CREATE TABLE dependencies (
 
     package_id INTEGER NOT NULL,
     dependency_name TEXT NOT NULL,
-    dependency_version TEXT,
-    is_optional INTEGER DEFAULT 0,
+    dep_version_op TEXT,        -- '>=', '<=', '=', '!=', NULL (any)
+    dep_version_val TEXT,       -- '1.2.3', NULL
+    dep_type TEXT NOT NULL      -- 'required', 'optional', 'conflict', 'makedep'
+        CHECK(dep_type IN ('required','optional','conflict','makedep')),
 
-    FOREIGN KEY (package_id)
-        REFERENCES packages(id)
-        ON DELETE CASCADE
+    FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE
 );
 CREATE TABLE files (
     id INTEGER PRIMARY KEY,
