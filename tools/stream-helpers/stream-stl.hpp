@@ -2,7 +2,6 @@
 
 #include "stream-concept.hpp"
 #include <concepts>
-#include <iomanip>
 #include <optional>
 #include <ostream>
 #include <tuple>
@@ -35,12 +34,12 @@ namespace std
         auto print_elem      = [&](const auto &elem)
         {
             oss << sep;
-            sep = ", ";
+            sep      = ", ";
 
             using Tp = std::decay_t<decltype(elem)>;
             if constexpr (std::convertible_to<Tp, std::string_view>)
             {
-                oss << std::quoted(elem);
+                oss << '\"' << elem << '\"';
             }
             else
             {
