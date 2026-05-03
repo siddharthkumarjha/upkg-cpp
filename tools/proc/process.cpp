@@ -5,20 +5,24 @@
 #include "defer.hpp"
 #include "logging.hpp"
 #include "result/result.hpp"
-#include <csignal>
-#include <cstdlib>
-#include <fcntl.h>
 #include <filesystem>
 #include <optional>
 #include <ranges>
-#include <spawn.h>
 #include <string>
 #include <string_view>
+#include <system_error>
+#include <vector>
+
+extern "C"
+{
+#include <csignal>
+#include <cstdlib>
+#include <fcntl.h>
+#include <spawn.h>
 #include <sys/pidfd.h>
 #include <sys/wait.h>
-#include <system_error>
 #include <unistd.h>
-#include <vector>
+}
 
 using namespace result_type;
 using namespace std::literals;
@@ -31,51 +35,39 @@ namespace upkg
 {
     enum ExitStatusKind
     {
-        Continued,
-        Dumped,
-        Exited,
-        Killed,
-        Stopped,
-        Trapped,
         Uncategorized,
+        Exited    = CLD_EXITED,
+        Killed    = CLD_KILLED,
+        Dumped    = CLD_DUMPED,
+        Trapped   = CLD_TRAPPED,
+        Stopped   = CLD_STOPPED,
+        Continued = CLD_CONTINUED,
     };
 
     static inline auto to_sv(ExitStatusKind const exit) -> std::string_view
     {
         static constexpr std::string_view sv_arr[] = {
-            [ExitStatusKind::Continued]     = "Continued",
-            [ExitStatusKind::Dumped]        = "Dumped",
+            [ExitStatusKind::Uncategorized] = "Uncategorized",
             [ExitStatusKind::Exited]        = "Exited",
             [ExitStatusKind::Killed]        = "Killed",
-            [ExitStatusKind::Stopped]       = "Stopped",
+            [ExitStatusKind::Dumped]        = "Dumped",
             [ExitStatusKind::Trapped]       = "Trapped",
-            [ExitStatusKind::Uncategorized] = "Uncategorized",
+            [ExitStatusKind::Stopped]       = "Stopped",
+            [ExitStatusKind::Continued]     = "Continued",
         };
-        if (exit >= ExitStatusKind::Continued and exit <= ExitStatusKind::Uncategorized)
+        if (exit >= ExitStatusKind::Exited and exit <= ExitStatusKind::Continued)
             return sv_arr[exit];
-        return "UNKNOWN"sv;
+
+        return sv_arr[ExitStatusKind::Uncategorized];
     }
 
-    static inline auto raw_to_exit_kind(const int raw) -> ExitStatusKind
+    static inline auto to_exit_kind(const int raw) -> ExitStatusKind
     {
-
-        switch (raw)
+        if (raw >= ExitStatusKind::Exited and raw <= ExitStatusKind::Continued)
         {
-        case CLD_CONTINUED:
-            return ExitStatusKind::Continued;
-        case CLD_DUMPED:
-            return ExitStatusKind::Dumped;
-        case CLD_EXITED:
-            return ExitStatusKind::Exited;
-        case CLD_KILLED:
-            return ExitStatusKind::Killed;
-        case CLD_STOPPED:
-            return ExitStatusKind::Stopped;
-        case CLD_TRAPPED:
-            return ExitStatusKind::Trapped;
-        default:
-            return ExitStatusKind::Uncategorized;
+            return static_cast<ExitStatusKind>(raw);
         }
+        return ExitStatusKind::Uncategorized;
     }
 
     struct ExitStatus
@@ -84,7 +76,7 @@ namespace upkg
         ExitStatusKind kind;
 
         ExitStatus(siginfo_t const &process_info)
-            : value{process_info.si_status}, kind{raw_to_exit_kind(process_info.si_code)}
+            : value{process_info.si_status}, kind{to_exit_kind(process_info.si_code)}
         {
         }
 
@@ -235,16 +227,16 @@ namespace upkg
             std::vector<char *> args{args_range.begin(), args_range.end()};
             args.emplace_back(nullptr);
 
-            TRY_OK(cvt_nz(pidfd_spawnp(&pid_fd, program_.c_str(), &file_actions, &attr, args.data(), environ)));
-            // auto const pid = pidfd_getpid(pid_fd);
-            // if (pid == -1)
-            // {
-            //     close(pid_fd);
-            //     return Err(std::make_error_code(static_cast<std::errc>(errno)));
-            // }
+            TRY_OK(cvt_nz(pidfd_spawn(&pid_fd, program_.c_str(), &file_actions, &attr, args.data(), environ)));
+            auto const pid = pidfd_getpid(pid_fd);
+            if (pid == -1)
+            {
+                close(pid_fd);
+                return Err(std::make_error_code(static_cast<std::errc>(errno)));
+            }
 
             return Ok(std::make_pair(
-                Process{.pid_    = -1,
+                Process{.pid_    = pid,
                         .status_ = std::nullopt,
                         .pid_fd_ = (pid_fd >= 0) ? std::make_optional<Process::PidFd>(pid_fd) : std::nullopt},
                 std::move(ours)));
