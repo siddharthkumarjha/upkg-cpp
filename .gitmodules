@@ -1,3 +1,6 @@
 [submodule "external/cpp-result"]
 	path = external/cpp-result
 	url = git@github.com:siddharthkumarjha/cpp-result.git
+[submodule "external/pfr"]
+	path = external/pfr
+	url = git@github.com:apolukhin/pfr_non_boost.git

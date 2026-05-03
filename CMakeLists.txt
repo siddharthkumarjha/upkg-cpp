@@ -4,7 +4,9 @@ project(upkg CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(BUILD_TESTING OFF)
 add_subdirectory(external/cpp-result)
+add_subdirectory(external/pfr)
 
 add_subdirectory(tools)
 

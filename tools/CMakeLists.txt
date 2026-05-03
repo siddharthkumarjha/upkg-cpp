@@ -15,6 +15,7 @@ list(APPEND DEP  cpp-result)
 
 # stream
 list(APPEND INC  ${CMAKE_CURRENT_SOURCE_DIR}/stream-helpers)
+list(APPEND DEP  pfr)
 
 # logger
 list(APPEND SRCS ${CMAKE_CURRENT_SOURCE_DIR}/logger/logging.cpp)

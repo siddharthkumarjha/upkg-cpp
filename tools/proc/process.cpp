@@ -1,6 +1,7 @@
 #include "stream-ranges.hpp"
 #include "stream-stl.hpp"
 
+#include "debug-impl.hpp"
 #include "defer.hpp"
 #include "logging.hpp"
 #include "result/result.hpp"
@@ -98,10 +99,7 @@ namespace upkg
         std::string stdout_;
         std::string stderr_;
 
-        friend auto operator<<(std::ostream &oss, CommandOutput const &cmd_out) -> std::ostream &
-        {
-            return oss << "stdout: [" << cmd_out.stdout_ << "] stderr: [" << cmd_out.stderr_ << "]";
-        }
+        IMPL_DEBUG(CommandOutput)
     };
 
     enum class Stdio
@@ -121,11 +119,7 @@ namespace upkg
 
         std::optional<PidFd> pid_fd_;
 
-        friend auto operator<<(std::ostream &oss, const Process &proc) -> std::ostream &
-        {
-            oss << "pid: " << proc.pid_ << " exit status: " << proc.status_ << " pidfd " << proc.pid_fd_;
-            return oss;
-        }
+        IMPL_DEBUG(Process)
     };
 
     struct StdioPipes
@@ -183,7 +177,7 @@ namespace upkg
 
         friend auto operator<<(std::ostream &oss, const Command &cmd) -> std::ostream &
         {
-            oss << "cmd: " << cmd.program_ << " " << cmd.args_;
+            oss << "cmd: {program: " << cmd.program_ << ", args: " << cmd.args_ << ", cwd: " << cmd.args_ << "}";
             return oss;
         }
 
@@ -328,7 +322,7 @@ namespace upkg
                 TRY_OK(cvt(pipe2(fds, O_CLOEXEC)));
 
                 auto const &[reader, writer] = fds;
-                auto const [ours, theirs] = readable ? std::tie(writer, reader) : std::tie(reader, writer);
+                auto const [ours, theirs]    = readable ? std::tie(writer, reader) : std::tie(reader, writer);
 
                 return Ok<
                     std::pair
